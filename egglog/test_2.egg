@@ -1,0 +1,70 @@
+(include "./elephant.egg")
+
+;;Define wires
+(let a (Wire "a" 1))
+(let b (Wire "b" 1))
+
+;;Build nand logic 
+(let nand_circuit
+ (Not
+  (And a b)
+  ))
+
+(query-extract nand_circuit) ;;Should output original expression
+
+;;Run rules
+(run-schedule (saturate typing) (saturate decomp))
+
+;;Extract 
+(query-extract nand_circuit) ;;Should output a nand expression
+
+;;Build nor logic 
+(let nor_circuit
+ (Not
+  (Or a b)
+  ))
+
+(query-extract nor_circuit) ;;Should output original expression
+
+;;Run rules
+(run-schedule (saturate typing) (saturate decomp))
+
+;;Extract 
+(query-extract nor_circuit) ;;Should output a nor expression
+
+;;Build xor logic 
+(let xor_circuit
+ (Or
+  (And (Not a) b)
+  (And a (Not b))
+  ))
+
+(query-extract xor_circuit) ;;Should output original expression
+
+;;Run rules
+(run-schedule (saturate typing) (saturate decomp))
+
+;;Extract 
+(query-extract xor_circuit) ;;Should output a nor expression
+
+
+
+;;Build SR latch logic 
+; (let Q (Wire "a" 1))
+; (let Q_bar (Wire "b" 0))
+
+; (let r (Wire "a" 0))
+; (let s (Wire "b" 0))
+
+; (let Q
+;  (Nor r Q_bar))
+; (let Q_bar
+;  (Nor s Q))
+
+; (query-extract Q) ;;Should output original expression
+
+; ;;Run rules
+; (run-schedule (saturate typing) (saturate decomp))
+
+; ;;Extract 
+; (query-extract Q) ;;Should output an SR Latch expression

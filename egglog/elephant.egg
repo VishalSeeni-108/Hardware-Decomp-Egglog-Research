@@ -2,18 +2,23 @@
 (sort ExprVec (Vec Expr))
 (sort IVec (Vec i64))
 
-(function Wire (String i64) Expr)
-(function Reg (String i64) Expr)
-(function Mux (Expr Expr) Expr)
-(function Demux (Expr Expr) Expr)
-(function And (Expr Expr) Expr)
-(function Or (Expr Expr) Expr)
-(function Not (Expr) Expr)
-(function Select (i64 Expr) Expr :cost 1000)
-(function MapSelect (i64 ExprVec) Expr)
-(function SelectFromVec (IVec Expr) Expr)
-(function Concat (Expr Expr) Expr)
-(function Read (Expr ExprVec) Expr)
+(constructor Wire (String i64) Expr)
+(constructor Reg (String i64) Expr)
+(constructor Mux (Expr Expr) Expr)
+(constructor Demux (Expr Expr) Expr)
+(constructor And (Expr Expr) Expr)
+(constructor Or (Expr Expr) Expr)
+(constructor Not (Expr) Expr)
+(constructor Select (i64 Expr) Expr :cost 1000)
+(constructor MapSelect (i64 ExprVec) Expr)
+(constructor SelectFromVec (IVec Expr) Expr)
+(constructor Concat (Expr Expr) Expr)
+(constructor Read (Expr ExprVec) Expr)
+
+(constructor Nand (Expr Expr) Expr)
+(constructor Nor (Expr Expr) Expr)
+(constructor Xor (Expr Expr) Expr)
+(constructor SRLatch (Expr Expr) Expr)
 
 (datatype Port
   (ReadPort Expr ExprVec ExprVec)
@@ -108,6 +113,39 @@
   ((HasType (Demux s i) (Bitvector m)))
   :ruleset typing)
 
+(rule
+  ((Nand a b)
+   (HasType a (Bitvector 1))
+   (HasType b (Bitvector 1)))
+  ((HasType (Nand a b) (Bitvector 1)))
+  :ruleset typing)
+
+(rule
+  ((Nor a b)
+   (HasType a (Bitvector 1))
+   (HasType b (Bitvector 1)))
+  ((HasType (Nor a b) (Bitvector 1)))
+  :ruleset typing)
+
+(rule
+  ((SRLatch a b)
+   (HasType a (Bitvector 1))
+   (HasType b (Bitvector 1)))
+  ((HasType (SRLatch a b) (Bitvector 1)))
+  :ruleset typing)
+
+(rule
+  ((Xor a b)
+   (HasType a (Bitvector 1))
+   (HasType b (Bitvector 1)))
+  ((HasType (Xor a b) (Bitvector 1)))
+  :ruleset typing)
+
+
+
+
+
+
 (ruleset decomp)
 ;; 2-to-1 mux
 ;; s a b <--> (a & ~s) | (b & s)
@@ -159,3 +197,23 @@
  (SelectFromVec (vec-append i j) a)
  :ruleset decomp)
 
+(rule
+ ((Not (And a b)))
+ ((union (Not (And a b)) (Nand a b)))
+ :ruleset decomp)
+
+ (rule
+ ((Not (Or a b)))
+ ((union (Not (Or a b)) (Nor a b)))
+ :ruleset decomp)
+
+ (rule
+ ((Or (And (Not a) b) (And a (Not b))))
+ ((union (Or (And (Not a) b) (And a (Not b))) (Xor a b)))
+ :ruleset decomp)
+
+(rule
+ ((= Q (Nor r Q_bar))
+  (= Q_bar (Nor Q s)))
+ ((union Q (SRLatch r s)))
+ :ruleset decomp)
